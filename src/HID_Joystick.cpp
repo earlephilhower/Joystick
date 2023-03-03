@@ -21,7 +21,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "Joystick.h"
+#include "HID_Joystick.h"
 #include "Arduino.h"
 #include <RP2040USB.h>
 
@@ -29,13 +29,13 @@
 #include "class/hid/hid_device.h"
 
 // Weak function override to add our descriptor to the TinyUSB list
-void __USBInstallJoystick() { /* noop */ }
+//void __USBInstallJoystick() { /* noop */ }
 
 //================================================================================
 //================================================================================
 //	Joystick/Gamepad
 
-Joystick_::Joystick_(void)
+HID_Joystick::HID_Joystick(void)
 {
     _use8bit = false;
     _autosend = true;
@@ -47,13 +47,13 @@ Joystick_::Joystick_(void)
   default: axes methods are accepting values from 0-1023 (compatibility to other Joystick libraries)
 		and are mapped internally to int8_t
   if use8bit(true) is called, -127 to 127 values are used.*/
-void Joystick_::use8bit(bool mode)
+void HID_Joystick::use8bit(bool mode)
 {
 	_use8bit = mode;
 }
 
 //if set, the gamepad report is not automatically sent after an update of axes/buttons; use send_now to update
-void Joystick_::useManualSend(bool mode)
+void HID_Joystick::useManualSend(bool mode)
 {
 	_autosend = !mode;
 }
@@ -63,7 +63,7 @@ void Joystick_::useManualSend(bool mode)
  * Depending on the setting via use8bit(), either values from 0-1023 or -127 - 127
  * are mapped.
  */
-int Joystick_::map8or10bit(int const value)
+int HID_Joystick::map8or10bit(int const value)
 {
 	if(_use8bit)
 	{
@@ -77,15 +77,15 @@ int Joystick_::map8or10bit(int const value)
 	}
 }
 
-void Joystick_::begin(void) 
+void HID_Joystick::begin(void)
 {
 }
 
-void Joystick_::end(void) 
+void HID_Joystick::end(void)
 {
 }
 
-void Joystick_::button(uint8_t button, bool val)
+void HID_Joystick::button(uint8_t button, bool val)
 {
 	//I've no idea why, but without a second dword, it is not possible.
 	//maybe something with the alignment when using bit set/clear?!?
@@ -103,44 +103,44 @@ void Joystick_::button(uint8_t button, bool val)
 	}
 }
 
-void Joystick_::X(int val)
+void HID_Joystick::X(int val)
 {
 	data.x = map8or10bit(val);
 	if(_autosend) send_now();
 }
-void Joystick_::Y(int val)
+void HID_Joystick::Y(int val)
 {
 	data.y = map8or10bit(val);
 	if(_autosend) send_now();
 }
-void Joystick_::Z(int val)
+void HID_Joystick::Z(int val)
 {
 	data.z = map8or10bit(val);
 	if(_autosend) send_now();
 }
-void Joystick_::Zrotate(int val)
+void HID_Joystick::Zrotate(int val)
 {
 	data.rz = map8or10bit(val);
 	if(_autosend) send_now();
 }
-void Joystick_::sliderLeft(int val)
+void HID_Joystick::sliderLeft(int val)
 {
 	data.rx = map8or10bit(val);
 	if(_autosend) send_now();
 }
-void Joystick_::sliderRight(int val)
+void HID_Joystick::sliderRight(int val)
 {
 	data.ry = map8or10bit(val);
 	if(_autosend) send_now();
 }
 
-void Joystick_::slider(int val)
+void HID_Joystick::slider(int val)
 {
 	data.rx = map8or10bit(val);
 	if(_autosend) send_now();
 }
 
-void Joystick_::position(int X, int Y)
+void HID_Joystick::position(int X, int Y)
 {
 	data.x = map8or10bit(X);
 	data.y = map8or10bit(Y);
@@ -148,20 +148,21 @@ void Joystick_::position(int X, int Y)
 }
 
 //compatibility: there is only one hat implemented, num parameter is ignored
-void Joystick_::hat(unsigned int num, int angle)
+void HID_Joystick::hat(unsigned int num, int angle)
 {
 	(void) num;
 	hat(angle);
 }
   
 //set the hat value, from 0-360. -1 is rest position
-void Joystick_::hat(int angle)
+void HID_Joystick::hat(int angle)
 {
 	if(angle < 0) data.hat = 0;
 	if(angle >= 0 && angle <= 360) data.hat = map(angle,0,360,1,8);
 	if(_autosend) send_now();
 }
-  
+
+#if 0
 //immediately send an HID report
 void Joystick_::send_now(void)
 {
@@ -172,5 +173,4 @@ void Joystick_::send_now(void)
     }
     tud_task();
 }
-
-Joystick_ Joystick;
+#endif
