@@ -38,6 +38,8 @@ public:
   
   //set a selected button to pressed/released
   void button(uint8_t button, bool val);
+  //same call as button, but "button" starts with 0
+  void setButton(uint8_t btn, bool val);
   //set axis values
   void X(int val);
   void Y(int val);
@@ -64,4 +66,7 @@ public:
   // and are mapped internally to int8_t
   //if use8bit(true) is called, -127 to 127 values are used.
   void use8bit(bool mode);
+
+  //get the gamepad report which is sent last.
+  void getReport(hid_gamepad_report_t *report);
 };

@@ -103,6 +103,12 @@ void HID_Joystick::button(uint8_t button, bool val)
 	}
 }
 
+void HID_Joystick::setButton(uint8_t btn, bool val)
+{
+  //simply call button, but we setButton uses 0-31; button 1-32
+  button(btn+1, val);
+}
+
 void HID_Joystick::X(int val)
 {
 	data.x = map8or10bit(val);
@@ -160,6 +166,12 @@ void HID_Joystick::hat(int angle)
 	if(angle < 0) data.hat = 0;
 	if(angle >= 0 && angle <= 360) data.hat = map(angle,0,360,1,8);
 	if(_autosend) send_now();
+}
+
+//send back the Joystick report
+void HID_Joystick::getReport(hid_gamepad_report_t *report)
+{
+  memcpy(report,&data,sizeof(data));
 }
 
 #if 0
