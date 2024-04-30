@@ -1,24 +1,24 @@
 /*
-  Joystick.cpp
+    Joystick.cpp
 
-  Copyright (c) 2022, Benjamin Aigner <beni@asterics-foundation.org>
-  Implementation loosely based on:
-  * Mouse library from https://github.com/earlephilhower/arduino-pico
-  * Joystick functions from Teensyduino https://github.com/PaulStoffregen
+    Copyright (c) 2022, Benjamin Aigner <beni@asterics-foundation.org>
+    Implementation loosely based on:
+    Mouse library from https://github.com/earlephilhower/arduino-pico
+    Joystick functions from Teensyduino https://github.com/PaulStoffregen
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "HID_Joystick.h"
@@ -35,153 +35,175 @@
 //================================================================================
 //	Joystick/Gamepad
 
-HID_Joystick::HID_Joystick(void)
-{
+HID_Joystick::HID_Joystick(void) {
     _use8bit = false;
     _autosend = true;
-    memset(&data,0,sizeof(data));
-	//_X_axis = _Y_axis = _Z_axis = _Zrotate = _sliderLeft = _sliderRight = _hat = data.buttons = 0;
+    memset(&data, 0, sizeof(data));
+    //_X_axis = _Y_axis = _Z_axis = _Zrotate = _sliderLeft = _sliderRight = _hat = data.buttons = 0;
 }
 
 /** define the mapping of axes values
-  default: axes methods are accepting values from 0-1023 (compatibility to other Joystick libraries)
+    default: axes methods are accepting values from 0-1023 (compatibility to other Joystick libraries)
 		and are mapped internally to int8_t
-  if use8bit(true) is called, -127 to 127 values are used.*/
-void HID_Joystick::use8bit(bool mode)
-{
-	_use8bit = mode;
+    if use8bit(true) is called, -127 to 127 values are used.*/
+void HID_Joystick::use8bit(bool mode) {
+    _use8bit = mode;
 }
 
 //if set, the gamepad report is not automatically sent after an update of axes/buttons; use send_now to update
-void HID_Joystick::useManualSend(bool mode)
-{
-	_autosend = !mode;
+void HID_Joystick::useManualSend(bool mode) {
+    _autosend = !mode;
 }
 
 /** Maps values from 8bit signed or 10bit unsigned to report values
- * 
- * Depending on the setting via use8bit(), either values from 0-1023 or -127 - 127
- * are mapped.
- */
-int HID_Joystick::map8or10bit(int const value)
-{
-	if(_use8bit)
-	{
-		if     (value < -127) return -127;
-		else if(value >  127) return 127;
-		else               return value;
-	} else {
-		if(value < 0) return 0;
-		if(value > 1023) return 1023;
-		return map(value, 0, 1023, -127, 127);
-	}
+
+    Depending on the setting via use8bit(), either values from 0-1023 or -127 - 127
+    are mapped.
+*/
+int HID_Joystick::map8or10bit(int const value) {
+    if (_use8bit) {
+        if (value < -127) {
+            return -127;
+        } else if (value >  127) {
+            return 127;
+        } else {
+            return value;
+        }
+    } else {
+        if (value < 0) {
+            return 0;
+        }
+        if (value > 1023) {
+            return 1023;
+        }
+        return map(value, 0, 1023, -127, 127);
+    }
 }
 
-void HID_Joystick::begin(void)
-{
+void HID_Joystick::begin(void) {
 }
 
-void HID_Joystick::end(void)
-{
+void HID_Joystick::end(void) {
 }
 
-void HID_Joystick::button(uint8_t button, bool val)
-{
-	//I've no idea why, but without a second dword, it is not possible.
-	//maybe something with the alignment when using bit set/clear?!?
-	static uint32_t buttons_local = 0;
+void HID_Joystick::button(uint8_t button, bool val) {
+    //I've no idea why, but without a second dword, it is not possible.
+    //maybe something with the alignment when using bit set/clear?!?
+    static uint32_t buttons_local = 0;
 
-	if(button >= 1 && button <= 32) {
-		if(val){
-			buttons_local |= (1UL << (button-1));
-		} else {
-			buttons_local &= ~(1UL << (button-1));
-		}
-		
-		data.buttons = buttons_local;
-		if(_autosend) send_now();
-	}
-}
+    if (button >= 1 && button <= 32) {
+        if (val) {
+            buttons_local |= (1UL << (button - 1));
+        } else {
+            buttons_local &= ~(1UL << (button - 1));
+        }
 
-void HID_Joystick::setButton(uint8_t btn, bool val)
-{
-  //simply call button, but we setButton uses 0-31; button 1-32
-  button(btn+1, val);
+        data.buttons = buttons_local;
+        if (_autosend) {
+            send_now();
+        }
+    }
 }
 
-void HID_Joystick::X(int val)
-{
-	data.x = map8or10bit(val);
-	if(_autosend) send_now();
-}
-void HID_Joystick::Y(int val)
-{
-	data.y = map8or10bit(val);
-	if(_autosend) send_now();
-}
-void HID_Joystick::Z(int val)
-{
-	data.z = map8or10bit(val);
-	if(_autosend) send_now();
-}
-void HID_Joystick::Zrotate(int val)
-{
-	data.rz = map8or10bit(val);
-	if(_autosend) send_now();
-}
-void HID_Joystick::sliderLeft(int val)
-{
-	data.rx = map8or10bit(val);
-	if(_autosend) send_now();
-}
-void HID_Joystick::sliderRight(int val)
-{
-	data.ry = map8or10bit(val);
-	if(_autosend) send_now();
+void HID_Joystick::setButton(uint8_t btn, bool val) {
+    //simply call button, but we setButton uses 0-31; button 1-32
+    button(btn + 1, val);
 }
 
-void HID_Joystick::slider(int val)
-{
-	data.rx = map8or10bit(val);
-	if(_autosend) send_now();
+void HID_Joystick::X(int val) {
+    data.x = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+void HID_Joystick::Y(int val) {
+    data.y = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+void HID_Joystick::Z(int val) {
+    data.z = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+void HID_Joystick::Zrotate(int val) {
+    data.rz = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+void HID_Joystick::sliderLeft(int val) {
+    data.rx = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+void HID_Joystick::sliderRight(int val) {
+    data.ry = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
 }
 
-void HID_Joystick::position(int X, int Y)
-{
-	data.x = map8or10bit(X);
-	data.y = map8or10bit(Y);
-	if(_autosend) send_now();
+void HID_Joystick::slider(int val) {
+    data.rx = map8or10bit(val);
+    if (_autosend) {
+        send_now();
+    }
+}
+
+void HID_Joystick::position(int X, int Y) {
+    data.x = map8or10bit(X);
+    data.y = map8or10bit(Y);
+    if (_autosend) {
+        send_now();
+    }
+}
+
+//additional hat function to use the hat position instead of the angle
+void HID_Joystick::hat(HatPosition position) {
+    data.hat = (uint8_t) position;
+    if (_autosend) {
+        send_now();
+    }
 }
 
 //compatibility: there is only one hat implemented, num parameter is ignored
-void HID_Joystick::hat(unsigned int num, int angle)
-{
-	(void) num;
-	hat(angle);
+void HID_Joystick::hat(unsigned int num, int angle) {
+    (void) num;
+    hat(angle);
 }
-  
+
 //set the hat value, from 0-360. -1 is rest position
-void HID_Joystick::hat(int angle)
-{
-	if(angle < 0) data.hat = 0;
-	if(angle >= 0 && angle <= 360) data.hat = map(angle,0,360,1,8);
-	if(_autosend) send_now();
+void HID_Joystick::hat(int angle) {
+    if (angle < 0) {
+        data.hat = 0;
+    }
+    if (angle >= 0 && angle <= 360) {
+        data.hat = map(angle, 0, 360, 1, 9);
+    }
+    if (data.hat == 9) {
+        data.hat = 0;
+    }
+    if (_autosend) {
+        send_now();
+    }
 }
 
 //send back the Joystick report
-void HID_Joystick::getReport(hid_gamepad_report_t *report)
-{
-  memcpy(report,&data,sizeof(data));
+void HID_Joystick::getReport(hid_gamepad_report_t *report) {
+    memcpy(report, &data, sizeof(data));
 }
 
 #if 0
 //immediately send an HID report
-void Joystick_::send_now(void)
-{
-	CoreMutex m(&__usb_mutex);
+void Joystick_::send_now(void) {
+    CoreMutex m(&__usb_mutex);
     tud_task();
     if (tud_hid_ready()) {
-		tud_hid_n_report(0, __USBGetJoystickReportID(), &data, sizeof(data));
+        tud_hid_n_report(0, __USBGetJoystickReportID(), &data, sizeof(data));
     }
     tud_task();
 }
