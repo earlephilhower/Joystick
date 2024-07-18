@@ -37,6 +37,8 @@
 
 HID_Joystick::HID_Joystick(void) {
     _use8bit = false;
+    _use10bit = true;
+    _use16bit = false;
     _autosend = true;
     memset(&data, 0, sizeof(data));
     //_X_axis = _Y_axis = _Z_axis = _Zrotate = _sliderLeft = _sliderRight = _hat = data.buttons = 0;
@@ -50,6 +52,18 @@ void HID_Joystick::use8bit(bool mode) {
     _use8bit = mode;
 }
 
+void HID_Joystick::use10bit() {
+    _use8bit = false;
+    _use10bit = true;
+    _use16bit = false;
+}
+
+void HID_Joystick::use16bit() {
+    _use8bit = false;
+    _use10bit = false;
+    _use16bit = true;
+}
+
 //if set, the gamepad report is not automatically sent after an update of axes/buttons; use send_now to update
 void HID_Joystick::useManualSend(bool mode) {
     _autosend = !mode;
@@ -60,23 +74,31 @@ void HID_Joystick::useManualSend(bool mode) {
     Depending on the setting via use8bit(), either values from 0-1023 or -127 - 127
     are mapped.
 */
-int HID_Joystick::map8or10bit(int const value) {
+int HID_Joystick::mapBits(int const value) {
     if (_use8bit) {
         if (value < -127) {
-            return -127;
+            return -32767;
         } else if (value >  127) {
-            return 127;
+            return 32767;
         } else {
-            return value;
+            return value << 8;
         }
-    } else {
+    } else if (_use10bit) {
         if (value < 0) {
             return 0;
         }
         if (value > 1023) {
-            return 1023;
+            return 32767;
         }
-        return map(value, 0, 1023, -127, 127);
+        return map(value, 0, 1023, -32767, 32767);
+    } else {
+        if (value < -32767) {
+            return -32767;
+        } else if (value >  32767) {
+            return 32767;
+        } else {
+            return value;
+        }
     }
 }
 
@@ -111,52 +133,52 @@ void HID_Joystick::setButton(uint8_t btn, bool val) {
 }
 
 void HID_Joystick::X(int val) {
-    data.x = map8or10bit(val);
+    data.x = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Y(int val) {
-    data.y = map8or10bit(val);
+    data.y = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Z(int val) {
-    data.z = map8or10bit(val);
+    data.z = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Zrotate(int val) {
-    data.rz = map8or10bit(val);
+    data.rz = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::sliderLeft(int val) {
-    data.rx = map8or10bit(val);
+    data.rx = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::sliderRight(int val) {
-    data.ry = map8or10bit(val);
+    data.ry = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 
 void HID_Joystick::slider(int val) {
-    data.rx = map8or10bit(val);
+    data.rx = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 
 void HID_Joystick::position(int X, int Y) {
-    data.x = map8or10bit(X);
-    data.y = map8or10bit(Y);
+    data.x = mapBits(X);
+    data.y = mapBits(Y);
     if (_autosend) {
         send_now();
     }
@@ -193,18 +215,6 @@ void HID_Joystick::hat(int angle) {
 }
 
 //send back the Joystick report
-void HID_Joystick::getReport(hid_gamepad_report_t *report) {
+void HID_Joystick::getReport(hid_gamepad16_report_t *report) {
     memcpy(report, &data, sizeof(data));
 }
-
-#if 0
-//immediately send an HID report
-void Joystick_::send_now(void) {
-    CoreMutex m(&__usb_mutex);
-    tud_task();
-    if (tud_hid_ready()) {
-        tud_hid_n_report(0, __USBGetJoystickReportID(), &data, sizeof(data));
-    }
-    tud_task();
-}
-#endif

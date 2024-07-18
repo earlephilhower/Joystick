@@ -23,13 +23,28 @@
 #include <Arduino.h>
 #include "class/hid/hid.h"
 
+/// HID Gamepad Protocol Report.
+typedef struct TU_ATTR_PACKED {
+  int16_t x;         ///< Delta x  movement of left analog-stick
+  int16_t y;         ///< Delta y  movement of left analog-stick
+  int16_t z;         ///< Delta z  movement of right analog-joystick
+  int16_t rz;        ///< Delta Rz movement of right analog-joystick
+  int16_t rx;        ///< Delta Rx movement of analog left trigger
+  int16_t ry;        ///< Delta Ry movement of analog right trigger
+  uint8_t hat;       ///< Buttons mask for currently pressed buttons in the DPad/hat
+  uint32_t buttons;  ///< Buttons mask for currently pressed buttons
+} hid_gamepad16_report_t;
+
+
 //======================================================================
 class HID_Joystick {
 protected:
     bool _autosend;
     bool _use8bit;
-    hid_gamepad_report_t data;
-    int map8or10bit(int const value);
+    bool _use10bit;
+    bool _use16bit;
+    hid_gamepad16_report_t data;
+    int mapBits(int const value);
 public:
     HID_Joystick(void);
     void begin(void);
@@ -66,10 +81,15 @@ public:
     virtual void send_now(void) = 0;
     //define the mapping of axes values
     //default: axes methods are accepting values from 0-1023 (compatibility to other Joystick libraries)
-    // and are mapped internally to int8_t
     //if use8bit(true) is called, -127 to 127 values are used.
-    void use8bit(bool mode);
+    void use8bit(bool mode = true);
+
+    // 10-bit, unsigned 0...1023
+    void use10bit();
+
+    // 16-bit signed, -32767...32767
+    void use16bit();
 
     //get the gamepad report which is sent last.
-    void getReport(hid_gamepad_report_t *report);
+    void getReport(hid_gamepad16_report_t *report);
 };
