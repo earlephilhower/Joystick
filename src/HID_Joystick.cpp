@@ -22,11 +22,11 @@
 */
 
 #include "HID_Joystick.h"
-#include "Arduino.h"
+#include <Arduino.h>
 #include <RP2040USB.h>
 
-#include "tusb.h"
-#include "class/hid/hid_device.h"
+#include <tusb.h>
+#include <class/hid/hid_device.h>
 
 // Weak function override to add our descriptor to the TinyUSB list
 //void __USBInstallJoystick() { /* noop */ }
