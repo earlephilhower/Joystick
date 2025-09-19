@@ -35,8 +35,8 @@ protected:
     int mapBits(int const value);
 public:
     HID_Joystick(void);
-    void begin(void);
-    void end(void);
+    virtual void begin(void);
+    virtual void end(void);
 
     //set a selected button to pressed/released
     void button(uint8_t button, bool val);
@@ -80,4 +80,6 @@ public:
 
     //get the gamepad report which is sent last.
     void getReport(hid_gamepad16_report_t *report);
+
+    bool _running;
 };

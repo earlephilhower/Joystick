@@ -23,13 +23,10 @@
 
 #include "HID_Joystick.h"
 #include <Arduino.h>
-#include <RP2040USB.h>
+#include <USB.h>
 
 #include <tusb.h>
 #include <class/hid/hid_device.h>
-
-// Weak function override to add our descriptor to the TinyUSB list
-//void __USBInstallJoystick() { /* noop */ }
 
 //================================================================================
 //================================================================================
@@ -40,6 +37,7 @@ HID_Joystick::HID_Joystick(void) {
     _use10bit = true;
     _use16bit = false;
     _autosend = true;
+    _running = false;
     memset(&data, 0, sizeof(data));
     //_X_axis = _Y_axis = _Z_axis = _Zrotate = _sliderLeft = _sliderRight = _hat = data.buttons = 0;
 }
@@ -103,12 +101,17 @@ int HID_Joystick::mapBits(int const value) {
 }
 
 void HID_Joystick::begin(void) {
+    _running = true;
 }
 
 void HID_Joystick::end(void) {
+    _running = false;
 }
 
 void HID_Joystick::button(uint8_t button, bool val) {
+    if (!_running) {
+        return;
+    }
     //I've no idea why, but without a second dword, it is not possible.
     //maybe something with the alignment when using bit set/clear?!?
     static uint32_t buttons_local = 0;
@@ -128,41 +131,62 @@ void HID_Joystick::button(uint8_t button, bool val) {
 }
 
 void HID_Joystick::setButton(uint8_t btn, bool val) {
+    if (!_running) {
+        return;
+    }
     //simply call button, but we setButton uses 0-31; button 1-32
     button(btn + 1, val);
 }
 
 void HID_Joystick::X(int val) {
+    if (!_running) {
+        return;
+    }
     data.x = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Y(int val) {
+    if (!_running) {
+        return;
+    }
     data.y = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Z(int val) {
+    if (!_running) {
+        return;
+    }
     data.z = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::Zrotate(int val) {
+    if (!_running) {
+        return;
+    }
     data.rz = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::sliderLeft(int val) {
+    if (!_running) {
+        return;
+    }
     data.rx = mapBits(val);
     if (_autosend) {
         send_now();
     }
 }
 void HID_Joystick::sliderRight(int val) {
+    if (!_running) {
+        return;
+    }
     data.ry = mapBits(val);
     if (_autosend) {
         send_now();
@@ -170,6 +194,9 @@ void HID_Joystick::sliderRight(int val) {
 }
 
 void HID_Joystick::slider(int val) {
+    if (!_running) {
+        return;
+    }
     data.rx = mapBits(val);
     if (_autosend) {
         send_now();
@@ -177,6 +204,9 @@ void HID_Joystick::slider(int val) {
 }
 
 void HID_Joystick::position(int X, int Y) {
+    if (!_running) {
+        return;
+    }
     data.x = mapBits(X);
     data.y = mapBits(Y);
     if (_autosend) {
@@ -186,6 +216,9 @@ void HID_Joystick::position(int X, int Y) {
 
 //additional hat function to use the hat position instead of the angle
 void HID_Joystick::hat(HatPosition position) {
+    if (!_running) {
+        return;
+    }
     data.hat = (uint8_t) position;
     if (_autosend) {
         send_now();
@@ -200,6 +233,9 @@ void HID_Joystick::hat(unsigned int num, int angle) {
 
 //set the hat value, from 0-360. -1 is rest position
 void HID_Joystick::hat(int angle) {
+    if (!_running) {
+        return;
+    }
     if (angle < 0) {
         data.hat = 0;
     }
@@ -216,5 +252,8 @@ void HID_Joystick::hat(int angle) {
 
 //send back the Joystick report
 void HID_Joystick::getReport(hid_gamepad16_report_t *report) {
+    if (!_running) {
+        return;
+    }
     memcpy(report, &data, sizeof(data));
 }
