@@ -21,8 +21,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <class/hid/hid.h>
-#include <sdkoverride/tusb_gamepad16.h>
+#include <sdkoverride/tusb_gamepad16_report.h>
 
 //======================================================================
 class HID_Joystick {
